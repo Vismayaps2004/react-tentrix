@@ -7,12 +7,17 @@ const BOARD_BG = "#2C2C3E";
 
 interface BoardProps {
   board: BoardState;
-  dragState: DragState | null;
+  dragState?: DragState | null;
+  previewCells?: Map<string, string>;
+  containerRef?: (el: HTMLDivElement | null) => void;
 }
 
-export default function Board({ board, dragState: _ }: BoardProps) {
+export default function Board(
+  { board, previewCells, containerRef }: BoardProps,
+) {
   return (
     <div
+      ref={containerRef ?? null}
       style={{
         display: "grid",
         gridTemplateColumns: "repeat(10, 1fr)",
@@ -22,11 +27,18 @@ export default function Board({ board, dragState: _ }: BoardProps) {
         padding: GRID_PADDING,
         background: BOARD_BG,
         borderRadius: 8,
+        userSelect: "none",
+        touchAction: "none",
       }}
     >
       {board.flatMap((row, r) =>
         row.map((color, c) => (
-          <Cell key={`${r},${c}`} color={color} row={r} col={c} />
+          <Cell
+            key={`${r},${c}`}
+            color={previewCells?.get(`${r},${c}`) ?? color}
+            row={r}
+            col={c}
+          />
         ))
       )}
     </div>

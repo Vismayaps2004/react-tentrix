@@ -17,7 +17,8 @@ export type Screen = "landing" | "playing" | "paused" | "gameover";
 
 export interface DragState {
   shapeIndex: number;
-  hoverCell: [number, number] | null; // [row, col] on board
+  grabOffset: [number, number]; // which cell within the shape was grabbed
+  hoverCell: [number, number] | null; // [row, col] on board under the pointer
 }
 
 export interface GameState {

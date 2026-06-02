@@ -1,30 +1,43 @@
-import type { GameState } from "../types/index.ts";
-import { createEmptyBoard } from "./board.ts";
+import type { GameState, ShapeSlot } from "../types/index.ts";
+import { canPlace, placeShape, clearLines, createEmptyBoard } from "./board.ts";
+import { getRandomShapes } from "./shapes.ts";
+
+export type GameAction =
+  | { type: "PLACE"; shapeIndex: number; anchorRow: number; anchorCol: number };
 
 export function createInitialState(): GameState {
+  const [a, b, c] = getRandomShapes(3);
   return {
-    screen: "landing",
-    board: createEmptyBoard(),
-    shapes: [null, null, null],
-    score: 0,
-    dragState: null,
-  };
-}
-
-export function startGame(state: GameState): GameState {
-  return {
-    ...state,
     screen: "playing",
     board: createEmptyBoard(),
-    shapes: [null, null, null],
+    shapes: [a ?? null, b ?? null, c ?? null],
     score: 0,
     dragState: null,
   };
 }
 
-export function togglePause(state: GameState): GameState {
-  return {
-    ...state,
-    screen: state.screen === "playing" ? "paused" : "playing",
-  };
+export function gameReducer(state: GameState, action: GameAction): GameState {
+  switch (action.type) {
+    case "PLACE": {
+      const { shapeIndex, anchorRow, anchorCol } = action;
+      const shape = state.shapes[shapeIndex];
+      if (!shape) return state;
+      if (!canPlace(state.board, shape, anchorRow, anchorCol)) return state;
+
+      const placed = placeShape(state.board, shape, anchorRow, anchorCol);
+      const { board } = clearLines(placed);
+
+      const newShapes = [...state.shapes] as [ShapeSlot, ShapeSlot, ShapeSlot];
+      newShapes[shapeIndex] = null;
+
+      return {
+        ...state,
+        board,
+        shapes: newShapes,
+        score: state.score + shape.cells.length,
+      };
+    }
+    default:
+      return state;
+  }
 }

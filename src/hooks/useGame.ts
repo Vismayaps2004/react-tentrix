@@ -1,8 +1,15 @@
-import { useState } from "react";
-import type { GameState } from "../types/index.ts";
-import { createInitialState } from "../game/gameEngine.ts";
+import { useCallback, useReducer } from "react";
+import { createInitialState, gameReducer } from "../game/gameEngine.ts";
 
 export function useGame() {
-  const [state, setState] = useState<GameState>(createInitialState);
-  return { state, setState };
+  const [state, dispatch] = useReducer(gameReducer, null, createInitialState);
+
+  const place = useCallback(
+    (shapeIndex: number, anchorRow: number, anchorCol: number) => {
+      dispatch({ type: "PLACE", shapeIndex, anchorRow, anchorCol });
+    },
+    [],
+  );
+
+  return { state, place };
 }

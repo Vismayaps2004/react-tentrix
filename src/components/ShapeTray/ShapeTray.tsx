@@ -5,9 +5,13 @@ const SLOT_SIZE = 120;
 
 interface ShapeTrayProps {
   shapes: [ShapeSlot, ShapeSlot, ShapeSlot];
+  activeDragIndex?: number | null;
+  onDragStart?: (shapeIndex: number, grabOffset: [number, number]) => void;
 }
 
-export default function ShapeTray({ shapes }: ShapeTrayProps) {
+export default function ShapeTray(
+  { shapes, activeDragIndex, onDragStart }: ShapeTrayProps,
+) {
   return (
     <div
       style={{
@@ -26,10 +30,19 @@ export default function ShapeTray({ shapes }: ShapeTrayProps) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            opacity: shape ? 1 : 0.25,
+            opacity: shape ? (activeDragIndex === i ? 0.3 : 1) : 0.2,
+            transition: "opacity 120ms",
           }}
         >
-          {shape && <ShapePreview shape={shape} index={i} />}
+          {shape && (
+            <ShapePreview
+              shape={shape}
+              index={i}
+              onDragStart={onDragStart
+                ? (grabOffset) => onDragStart(i, grabOffset)
+                : undefined}
+            />
+          )}
         </div>
       ))}
     </div>

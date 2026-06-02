@@ -19,7 +19,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["dom", "dom.iterable", "esnext", "deno.ns"],
     "strict": true
   },
   "nodeModulesDir": "auto"
