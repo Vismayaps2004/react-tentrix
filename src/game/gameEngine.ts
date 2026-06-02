@@ -30,6 +30,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newShapes = [...state.shapes] as [ShapeSlot, ShapeSlot, ShapeSlot];
       newShapes[shapeIndex] = null;
 
+      if (newShapes.every((s) => s === null)) {
+        const [a, b, c] = getRandomShapes(3);
+        newShapes[0] = a ?? null;
+        newShapes[1] = b ?? null;
+        newShapes[2] = c ?? null;
+      }
+
       return {
         ...state,
         board,
