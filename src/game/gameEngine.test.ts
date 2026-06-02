@@ -1,11 +1,20 @@
 import { assert, assertEquals } from "@std/assert";
 import { createInitialState, gameReducer } from "./gameEngine.ts";
-import { createEmptyBoard, placeShape } from "./board.ts";
+import { BOARD_SIZE, createEmptyBoard, placeShape } from "./board.ts";
 import { SHAPES } from "./shapes.ts";
-import type { GameState, ShapeSlot } from "../types/index.ts";
+import type { BoardState, GameState, ShapeSlot } from "../types/index.ts";
 
 const get = (id: string) => SHAPES.find((s) => s.id === id)!;
 type Slots = [ShapeSlot, ShapeSlot, ShapeSlot];
+
+// Checkerboard board: null where (r+c) is even, "#block" where odd.
+// No row or column is ever complete (each has 5 nulls and 5 filled).
+// sq3 (3×3) cannot fit anywhere — every 3×3 area contains at least one "#block".
+// s1 (1×1) can fit at any even-sum cell, e.g. (0,0).
+const checkerBoard = (): BoardState =>
+  Array.from({ length: BOARD_SIZE }, (_, r) =>
+    Array.from({ length: BOARD_SIZE }, (_, c) => ((r + c) % 2 === 0 ? null : "#block"))
+  );
 
 // ─── Initial state ────────────────────────────────────────────────────────────
 
@@ -292,4 +301,200 @@ Deno.test("gameReducer PLACE: returns same state when target cells are occupied"
   };
   const next = gameReducer(state, { type: "PLACE", shapeIndex: 0, anchorRow: 0, anchorCol: 0 });
   assertEquals(next, state);
+});
+
+Deno.test("gameReducer PLACE: ignored when screen is not playing", () => {
+  const s1 = get("s1");
+  const state: GameState = {
+    screen: "gameover",
+    board: createEmptyBoard(),
+    shapes: [s1, null, null] as Slots,
+    score: 0,
+    dragState: null,
+  };
+  const next = gameReducer(state, { type: "PLACE", shapeIndex: 0, anchorRow: 0, anchorCol: 0 });
+  assertEquals(next, state);
+});
+
+// ─── Game-over detection ──────────────────────────────────────────────────────
+
+Deno.test("game-over: screen stays 'playing' when remaining shapes can still be placed", () => {
+  const s1 = get("s1");
+  const state: GameState = {
+    screen: "playing",
+    board: createEmptyBoard(),
+    shapes: [s1, s1, s1] as Slots,
+    score: 0,
+    dragState: null,
+  };
+  const next = gameReducer(state, { type: "PLACE", shapeIndex: 0, anchorRow: 0, anchorCol: 0 });
+  assertEquals(next.screen, "playing");
+});
+
+Deno.test("game-over: screen becomes 'gameover' when no remaining shape can be placed", () => {
+  // checkerboard: s1 fits at (0,0); sq3 (3×3) cannot fit anywhere (no 3×3 all-null area)
+  // After placing s1, only sq3 remains → game over
+  const s1 = get("s1");
+  const sq3 = get("sq3");
+  const state: GameState = {
+    screen: "playing",
+    board: checkerBoard(),
+    shapes: [s1, sq3, null] as Slots,
+    score: 0,
+    dragState: null,
+  };
+  const next = gameReducer(state, { type: "PLACE", shapeIndex: 0, anchorRow: 0, anchorCol: 0 });
+  assertEquals(next.screen, "gameover");
+});
+
+Deno.test("game-over: final score is preserved on gameover transition", () => {
+  const s1 = get("s1");
+  const sq3 = get("sq3");
+  const state: GameState = {
+    screen: "playing",
+    board: checkerBoard(),
+    shapes: [s1, sq3, null] as Slots,
+    score: 42,
+    dragState: null,
+  };
+  const next = gameReducer(state, { type: "PLACE", shapeIndex: 0, anchorRow: 0, anchorCol: 0 });
+  assertEquals(next.screen, "gameover");
+  assertEquals(next.score, 42 + s1.cells.length);
+});
+
+// ─── Restart ──────────────────────────────────────────────────────────────────
+
+Deno.test("RESTART: resets board to empty", () => {
+  const filledBoard: BoardState = Array.from(
+    { length: BOARD_SIZE },
+    () => Array(BOARD_SIZE).fill("#block"),
+  );
+  const state: GameState = {
+    screen: "gameover",
+    board: filledBoard,
+    shapes: [null, null, null] as Slots,
+    score: 999,
+    dragState: null,
+  };
+  const next = gameReducer(state, { type: "RESTART" });
+  assert(next.board.every((row) => row.every((cell) => cell === null)));
+});
+
+Deno.test("RESTART: resets score to zero", () => {
+  const state: GameState = {
+    screen: "gameover",
+    board: createEmptyBoard(),
+    shapes: [null, null, null] as Slots,
+    score: 500,
+    dragState: null,
+  };
+  assertEquals(gameReducer(state, { type: "RESTART" }).score, 0);
+});
+
+Deno.test("RESTART: screen returns to playing", () => {
+  const state: GameState = {
+    screen: "gameover",
+    board: createEmptyBoard(),
+    shapes: [null, null, null] as Slots,
+    score: 0,
+    dragState: null,
+  };
+  assertEquals(gameReducer(state, { type: "RESTART" }).screen, "playing");
+});
+
+Deno.test("RESTART: generates 3 non-null shapes", () => {
+  const state: GameState = {
+    screen: "gameover",
+    board: createEmptyBoard(),
+    shapes: [null, null, null] as Slots,
+    score: 0,
+    dragState: null,
+  };
+  const next = gameReducer(state, { type: "RESTART" });
+  assert(next.shapes.every((s) => s !== null), "all 3 slots should be filled");
+});
+
+Deno.test("RESTART: new shapes are from the SHAPES catalogue", () => {
+  const validIds = new Set(SHAPES.map((s) => s.id));
+  const state: GameState = {
+    screen: "gameover",
+    board: createEmptyBoard(),
+    shapes: [null, null, null] as Slots,
+    score: 0,
+    dragState: null,
+  };
+  const next = gameReducer(state, { type: "RESTART" });
+  for (const shape of next.shapes) {
+    assert(shape !== null && validIds.has(shape.id));
+  }
+});
+
+// ─── Pause / Resume ───────────────────────────────────────────────────────────
+
+Deno.test("TOGGLE_PAUSE: playing → paused", () => {
+  const state = createInitialState(); // screen: "playing"
+  const next = gameReducer(state, { type: "TOGGLE_PAUSE" });
+  assertEquals(next.screen, "paused");
+});
+
+Deno.test("TOGGLE_PAUSE: paused → playing (resume)", () => {
+  const state: GameState = { ...createInitialState(), screen: "paused" };
+  const next = gameReducer(state, { type: "TOGGLE_PAUSE" });
+  assertEquals(next.screen, "playing");
+});
+
+Deno.test("TOGGLE_PAUSE: no-op on gameover screen", () => {
+  const base = createInitialState();
+  const state: GameState = { ...base, screen: "gameover" };
+  assertEquals(gameReducer(state, { type: "TOGGLE_PAUSE" }), state);
+});
+
+Deno.test("TOGGLE_PAUSE: board, score, and shapes preserved when pausing", () => {
+  const s1 = get("s1");
+  const state: GameState = {
+    screen: "playing",
+    board: createEmptyBoard(),
+    shapes: [s1, null, null] as Slots,
+    score: 42,
+    dragState: null,
+  };
+  const next = gameReducer(state, { type: "TOGGLE_PAUSE" });
+  assertEquals(next.screen, "paused");
+  assertEquals(next.score, 42);
+  assertEquals(next.shapes[0], s1);
+  assertEquals(next.board, state.board); // same reference — nothing changed
+});
+
+Deno.test("TOGGLE_PAUSE: board, score, and shapes preserved when resuming", () => {
+  const s1 = get("s1");
+  const state: GameState = {
+    screen: "paused",
+    board: createEmptyBoard(),
+    shapes: [s1, null, null] as Slots,
+    score: 77,
+    dragState: null,
+  };
+  const next = gameReducer(state, { type: "TOGGLE_PAUSE" });
+  assertEquals(next.screen, "playing");
+  assertEquals(next.score, 77);
+  assertEquals(next.shapes[0], s1);
+  assertEquals(next.board, state.board);
+});
+
+Deno.test("PLACE: blocked when screen is paused", () => {
+  const s1 = get("s1");
+  const state: GameState = {
+    screen: "paused",
+    board: createEmptyBoard(),
+    shapes: [s1, null, null] as Slots,
+    score: 0,
+    dragState: null,
+  };
+  const next = gameReducer(state, {
+    type: "PLACE",
+    shapeIndex: 0,
+    anchorRow: 0,
+    anchorCol: 0,
+  });
+  assertEquals(next, state); // no change
 });

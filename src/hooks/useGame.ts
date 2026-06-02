@@ -11,5 +11,9 @@ export function useGame() {
     [],
   );
 
-  return { state, place };
+  const restart = useCallback(() => dispatch({ type: "RESTART" }), []);
+
+  const togglePause = useCallback(() => dispatch({ type: "TOGGLE_PAUSE" }), []);
+
+  return { state, place, restart, togglePause };
 }

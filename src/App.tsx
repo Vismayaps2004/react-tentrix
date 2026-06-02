@@ -2,14 +2,22 @@ import { useGame } from "./hooks/useGame.ts";
 import { useDragDrop } from "./hooks/useDragDrop.ts";
 import Board from "./components/Board/Board.tsx";
 import ShapeTray from "./components/ShapeTray/ShapeTray.tsx";
+import HUD from "./components/HUD/HUD.tsx";
+import Paused from "./components/Paused/Paused.tsx";
+import GameOver from "./components/GameOver/GameOver.tsx";
 
 export default function App() {
-  const { state, place } = useGame();
+  const { state, place, restart, togglePause } = useGame();
+  const isPaused = state.screen === "paused";
+
   const { dragState, previewCells, startDrag, setBoardRef } = useDragDrop(
     state.board,
     state.shapes,
     place,
+    state.screen === "playing", // disable drag when paused or game over
   );
+
+  const gameWidth = "min(480px, calc(100vw - 32px))";
 
   return (
     <div
@@ -20,25 +28,32 @@ export default function App() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: 24,
         padding: 16,
       }}
     >
-      <div style={{ width: "min(480px, calc(100vw - 32px))" }}>
+      <div style={{ width: gameWidth }}>
+        <HUD
+          score={state.score}
+          isPaused={isPaused}
+          onTogglePause={togglePause}
+        />
         <Board
           board={state.board}
           dragState={dragState}
           previewCells={previewCells}
           containerRef={setBoardRef}
         />
-      </div>
-      <div style={{ width: "min(480px, calc(100vw - 32px))" }}>
         <ShapeTray
           shapes={state.shapes}
           activeDragIndex={dragState?.shapeIndex ?? null}
-          onDragStart={startDrag}
+          onDragStart={isPaused ? undefined : startDrag}
         />
       </div>
+
+      {isPaused && <Paused onResume={togglePause} />}
+      {state.screen === "gameover" && (
+        <GameOver score={state.score} onRestart={restart} />
+      )}
     </div>
   );
 }

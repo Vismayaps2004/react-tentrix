@@ -6,6 +6,7 @@ export function useDragDrop(
   board: BoardState,
   shapes: [ShapeSlot, ShapeSlot, ShapeSlot],
   onPlace: (shapeIndex: number, anchorRow: number, anchorCol: number) => void,
+  enabled: boolean = true,
 ) {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const boardEl = useRef<HTMLDivElement | null>(null);
@@ -13,6 +14,11 @@ export function useDragDrop(
   // Keep mutable snapshot so event handlers never close over stale values.
   const snapshot = useRef({ dragState, shapes, board, onPlace });
   snapshot.current = { dragState, shapes, board, onPlace };
+
+  // Cancel any active drag when interaction is disabled (e.g. paused).
+  useEffect(() => {
+    if (!enabled) setDragState(null);
+  }, [enabled]);
 
   // Grab cursor on body while dragging.
   useEffect(() => {
@@ -68,13 +74,14 @@ export function useDragDrop(
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
     };
-  }, [!!dragState]); // re-attach only when dragging starts or stops
+  }, [!!dragState]);
 
   const startDrag = useCallback(
     (shapeIndex: number, grabOffset: [number, number]) => {
+      if (!enabled) return;
       setDragState({ shapeIndex, grabOffset, hoverCell: null });
     },
-    [],
+    [enabled],
   );
 
   // Callback ref so Board can register its DOM node.

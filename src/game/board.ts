@@ -62,9 +62,20 @@ export function clearLines(
   return { board: next, clearedRows: completedRows.size, clearedCols: completedCols.size };
 }
 
-export function isGameOver(
-  _board: BoardState,
-  _shapes: (Shape | null)[],
-): boolean {
+function hasAnyValidPlacement(board: BoardState, shape: Shape): boolean {
+  for (let r = 0; r <= BOARD_SIZE - shape.rows; r++) {
+    for (let c = 0; c <= BOARD_SIZE - shape.cols; c++) {
+      if (canPlace(board, shape, r, c)) return true;
+    }
+  }
   return false;
+}
+
+export function isGameOver(
+  board: BoardState,
+  shapes: (Shape | null)[],
+): boolean {
+  const active = shapes.filter((s): s is Shape => s !== null);
+  if (active.length === 0) return false;
+  return active.every((shape) => !hasAnyValidPlacement(board, shape));
 }

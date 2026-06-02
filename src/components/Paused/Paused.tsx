@@ -1,15 +1,14 @@
-interface GameOverProps {
-  score: number;
-  onRestart: () => void;
+interface PausedProps {
+  onResume: () => void;
 }
 
-export default function GameOver({ score, onRestart }: GameOverProps) {
+export default function Paused({ onResume }: PausedProps) {
   return (
     <div
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0, 0, 0, 0.82)",
+        background: "rgba(0, 0, 0, 0.65)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -20,39 +19,25 @@ export default function GameOver({ score, onRestart }: GameOverProps) {
         style={{
           background: "#1E1E2E",
           borderRadius: 16,
-          padding: "48px 56px",
+          padding: "40px 56px",
           textAlign: "center",
           color: "#E0E0F0",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
         }}
       >
         <h2
           style={{
             fontSize: 36,
             fontWeight: 800,
-            letterSpacing: 2,
-            marginBottom: 16,
-            color: "#EF5350",
-          }}
-        >
-          GAME OVER
-        </h2>
-        <p style={{ fontSize: 18, color: "#9E9EBE", marginBottom: 8 }}>
-          Final Score
-        </p>
-        <p
-          style={{
-            fontSize: 52,
-            fontWeight: 800,
+            letterSpacing: 4,
+            marginBottom: 28,
             color: "#4FC3F7",
-            marginBottom: 36,
-            lineHeight: 1,
           }}
         >
-          {score}
-        </p>
+          PAUSED
+        </h2>
         <button
-          onClick={onRestart}
+          onClick={onResume}
           style={{
             padding: "14px 40px",
             background: "#4FC3F7",
@@ -65,7 +50,7 @@ export default function GameOver({ score, onRestart }: GameOverProps) {
             letterSpacing: 1,
           }}
         >
-          PLAY AGAIN
+          RESUME
         </button>
       </div>
     </div>

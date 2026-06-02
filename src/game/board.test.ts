@@ -1,6 +1,7 @@
 import { assert, assertEquals } from "@std/assert";
-import { BOARD_SIZE, canPlace, clearLines, createEmptyBoard, placeShape } from "./board.ts";
+import { BOARD_SIZE, canPlace, clearLines, createEmptyBoard, isGameOver, placeShape } from "./board.ts";
 import { SHAPES } from "./shapes.ts";
+import type { BoardState } from "../types/index.ts";
 
 const get = (id: string) => SHAPES.find((s) => s.id === id)!;
 
@@ -112,4 +113,56 @@ Deno.test("clearLines: does not clear non-completed rows", () => {
   board = placeShape(board, s1, 3, 0);
   const result = clearLines(board);
   assertEquals(result.board[3][0], s1.color); // row 3 not cleared
+});
+
+// ─── isGameOver ───────────────────────────────────────────────────────────────
+
+// Helper: board with all cells filled
+const fullBoard = (): BoardState =>
+  Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill("#block"));
+
+// Helper: board where cols 0,3,6,9 are empty; cols 1,2,4,5,7,8 are filled.
+// No row has 3 consecutive empty cells → h3 (1×3) can never fit.
+const isolatedBoard = (): BoardState =>
+  Array.from({ length: BOARD_SIZE }, () =>
+    Array.from({ length: BOARD_SIZE }, (_, c) => (c % 3 === 0 ? null : "#block"))
+  );
+
+Deno.test("isGameOver: false on empty board (all shapes fit)", () => {
+  const board = createEmptyBoard();
+  assert(!isGameOver(board, [get("s1"), get("h3"), null]));
+});
+
+Deno.test("isGameOver: false when shapes array contains only nulls", () => {
+  assert(!isGameOver(createEmptyBoard(), [null, null, null]));
+});
+
+Deno.test("isGameOver: false when shapes array is empty", () => {
+  assert(!isGameOver(fullBoard(), []));
+});
+
+Deno.test("isGameOver: true when board is completely filled", () => {
+  assert(isGameOver(fullBoard(), [get("s1")]));
+});
+
+Deno.test("isGameOver: false when s1 fits in the single remaining empty cell", () => {
+  const board: BoardState = Array.from({ length: BOARD_SIZE }, (_, r) =>
+    Array.from({ length: BOARD_SIZE }, (_, c) => (r === 5 && c === 5 ? null : "#block"))
+  );
+  assert(!isGameOver(board, [get("s1")]));
+});
+
+Deno.test("isGameOver: true when no row has 3 consecutive empty cells (h3)", () => {
+  // isolated pattern: empty at 0,3,6,9; gaps between them are always < 3
+  assert(isGameOver(isolatedBoard(), [get("h3")]));
+});
+
+Deno.test("isGameOver: false when at least one shape from tray can fit", () => {
+  // s1 fits anywhere in the isolated pattern; h3 cannot
+  assert(!isGameOver(isolatedBoard(), [get("s1"), get("h3"), null]));
+});
+
+Deno.test("isGameOver: true with null padding when the only active shape cannot fit", () => {
+  // Same logic as previous test but with two null slots alongside h3
+  assert(isGameOver(isolatedBoard(), [get("h3"), null, null]));
 });
