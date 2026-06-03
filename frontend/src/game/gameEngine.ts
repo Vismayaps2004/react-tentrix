@@ -35,7 +35,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (!canPlace(state.board, shape, anchorRow, anchorCol)) return state;
 
       const placed = placeShape(state.board, shape, anchorRow, anchorCol);
-      const { board } = clearLines(placed);
+      const { board, clearedRows, clearedCols } = clearLines(placed);
 
       const newShapes = [...state.shapes] as [ShapeSlot, ShapeSlot, ShapeSlot];
       newShapes[shapeIndex] = null;
@@ -54,7 +54,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         screen,
         board,
         shapes: newShapes,
-        score: state.score + shape.cells.length,
+        score: state.score + shape.cells.length + (clearedRows + clearedCols) * 10,
       };
     }
     case "RESTART":

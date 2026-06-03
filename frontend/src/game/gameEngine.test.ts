@@ -71,6 +71,55 @@ Deno.test("score: accumulates correctly across sequential placements", () => {
   assertEquals(state.score, 1 + 3 + 4); // 8
 });
 
+Deno.test("score: adds +10 for each cleared row", () => {
+  const s1 = get("s1");
+  let board = createEmptyBoard();
+  for (let c = 0; c < 9; c++) board = placeShape(board, s1, 0, c);
+  const state: GameState = {
+    screen: "playing",
+    board,
+    shapes: [s1, null, null] as Slots,
+    score: 0,
+    dragState: null,
+  };
+  // Placing at (0,9) completes row 0
+  const next = gameReducer(state, { type: "PLACE", shapeIndex: 0, anchorRow: 0, anchorCol: 9 });
+  assertEquals(next.score, s1.cells.length + 10); // 1 cell + 1 row × 10
+});
+
+Deno.test("score: adds +10 for each cleared column", () => {
+  const s1 = get("s1");
+  let board = createEmptyBoard();
+  for (let r = 0; r < 9; r++) board = placeShape(board, s1, r, 3);
+  const state: GameState = {
+    screen: "playing",
+    board,
+    shapes: [s1, null, null] as Slots,
+    score: 0,
+    dragState: null,
+  };
+  // Placing at (9,3) completes column 3
+  const next = gameReducer(state, { type: "PLACE", shapeIndex: 0, anchorRow: 9, anchorCol: 3 });
+  assertEquals(next.score, s1.cells.length + 10); // 1 cell + 1 col × 10
+});
+
+Deno.test("score: adds +10 per line for simultaneous row and column clear", () => {
+  const s1 = get("s1");
+  let board = createEmptyBoard();
+  for (let c = 1; c < 10; c++) board = placeShape(board, s1, 0, c);
+  for (let r = 1; r < 10; r++) board = placeShape(board, s1, r, 0);
+  const state: GameState = {
+    screen: "playing",
+    board,
+    shapes: [s1, null, null] as Slots,
+    score: 0,
+    dragState: null,
+  };
+  // Placing at (0,0) completes row 0 and col 0 simultaneously
+  const next = gameReducer(state, { type: "PLACE", shapeIndex: 0, anchorRow: 0, anchorCol: 0 });
+  assertEquals(next.score, s1.cells.length + 20); // 1 cell + (1 row + 1 col) × 10
+});
+
 Deno.test("score: unchanged when placement is invalid", () => {
   const s1 = get("s1");
   const board = placeShape(createEmptyBoard(), s1, 0, 0);
@@ -259,7 +308,7 @@ Deno.test("clearing: clears multiple rows simultaneously through reducer", () =>
   const next = gameReducer(state, { type: "PLACE", shapeIndex: 0, anchorRow: 2, anchorCol: 9 });
   for (let c = 0; c < 10; c++) assertEquals(next.board[2][c], null, `row 2 col ${c}`);
   for (let c = 0; c < 10; c++) assertEquals(next.board[3][c], null, `row 3 col ${c}`);
-  assertEquals(next.score, v2.cells.length); // 2
+  assertEquals(next.score, v2.cells.length + 20); // 2 cells + 2 rows × 10
 });
 
 // ─── No-op cases ──────────────────────────────────────────────────────────────
