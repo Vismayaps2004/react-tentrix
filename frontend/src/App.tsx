@@ -14,24 +14,23 @@ export default function App() {
     state.board,
     state.shapes,
     place,
-    state.screen === "playing", // disable drag when paused or game over
+    state.screen === "playing",
   );
-
-  const gameWidth = "min(480px, calc(100vw - 32px))";
 
   return (
     <div
       style={{
-        minHeight: "100vh",
-        background: "#0F0F1A",
+        minHeight: "100dvh",
+        background: "radial-gradient(ellipse at 50% 0%, #1e1b4b 0%, #0a0a1a 60%)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: 16,
+        padding: "20px 16px",
+        overflowX: "hidden",
       }}
     >
-      <div style={{ width: gameWidth }}>
+      <div style={{ width: "min(480px, calc(100vw - 32px))" }}>
         <HUD
           score={state.score}
           isPaused={isPaused}
@@ -39,7 +38,6 @@ export default function App() {
         />
         <Board
           board={state.board}
-          dragState={dragState}
           previewCells={previewCells}
           containerRef={setBoardRef}
         />

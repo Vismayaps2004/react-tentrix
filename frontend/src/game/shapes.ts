@@ -1,15 +1,15 @@
 import type { Shape } from "../types/index.ts";
 
 const C = {
-  gray: "#78909C",
-  skyBlue: "#4FC3F7",
-  blue: "#29B6F6",
-  deepBlue: "#039BE5",
-  navy: "#0277BD",
-  green: "#66BB6A",
-  darkGreen: "#388E3C",
-  orange: "#FFA726",
-  red: "#EF5350",
+  gray:      "#94A3B8", // single     — slate-400
+  skyBlue:   "#38BDF8", // 2-cell     — sky-400
+  blue:      "#0EA5E9", // 3-cell     — sky-500
+  deepBlue:  "#3B82F6", // 4-cell     — blue-500
+  navy:      "#2563EB", // 5-cell     — blue-600
+  green:     "#4ADE80", // 2×2 square — green-400
+  darkGreen: "#22C55E", // 3×3 square — green-500
+  orange:    "#FB923C", // small L    — orange-400
+  red:       "#F87171", // big L      — red-400
 } as const;
 
 export const SHAPES: Shape[] = [

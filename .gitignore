@@ -1,4 +1,4 @@
-node_modules/
-dist/
-.deno/
-.vite/
+**/node_modules/
+**/dist/
+**/.deno/
+**/.vite/

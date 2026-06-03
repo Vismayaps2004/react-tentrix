@@ -13,6 +13,7 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 img, picture, video, canvas, svg {
@@ -30,4 +31,11 @@ p, h1, h2, h3, h4, h5, h6 {
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Keyboard focus ring */
+button:focus-visible {
+  outline: 2px solid #38BDF8;
+  outline-offset: 3px;
 }
